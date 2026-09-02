@@ -209,47 +209,41 @@
       "scripts_test_generate_tenant_repo_validateslug_test_refuses_uppercase_underscores_and_a_leading_digit"
     ],
     "10": [
-      "claude_md",
-      "node_modules_branchleft_ghost_platform_tenant_component",
-      "pulumi_yaml",
-      "readme_md",
-      "readme_tenant_md"
-    ],
-    "11": [
       "scripts_assert_placeholders_substituted",
       "scripts_assert_placeholders_substituted_find_placeholders",
       "scripts_assert_placeholders_substituted_main",
       "scripts_assert_placeholders_substituted_py_path"
     ],
-    "12": [
-      "ghost_platform_tenant_delete_guard",
-      "github_workflows_infra_ci_yml",
-      "pulumi_stack_config"
-    ],
-    "13": [
+    "11": [
       "branchleft_github_workflows_docs_lint",
       "github_workflows_docs_lint_docs_lint"
     ],
-    "14": [
+    "12": [
       "branchleft_standards_standards",
       "github_workflows_standards_standards"
     ],
-    "15": [
+    "13": [
       "ghost_platform_repo",
       "runbook_bootstrap"
     ],
-    "16": [
+    "14": [
       "hetzner_object_storage",
       "pulumi_stack"
     ],
-    "17": [
+    "15": [
       "branchleft_deploy"
     ],
-    "18": [
+    "16": [
+      "claude_md"
+    ],
+    "17": [
       "ghost_tenant_component"
     ],
-    "19": [
+    "18": [
       "github_workflows_graphify"
+    ],
+    "19": [
+      "github_workflows_infra_ci_yml"
     ],
     "20": [
       "google_cloud_platform"
@@ -264,6 +258,15 @@
       "pulumi_cli"
     ],
     "24": [
+      "pulumi_yaml"
+    ],
+    "25": [
+      "readme_md"
+    ],
+    "26": [
+      "readme_tenant_md"
+    ],
+    "27": [
       "scripts_test_unit"
     ]
   },
@@ -278,9 +281,9 @@
     "7": 0.15384615384615385,
     "8": 0.2727272727272727,
     "9": 0.25,
-    "10": 0.4,
-    "11": 0.8333333333333334,
-    "12": 0.6666666666666666,
+    "10": 0.8333333333333334,
+    "11": 1.0,
+    "12": 1.0,
     "13": 1.0,
     "14": 1.0,
     "15": 1.0,
@@ -292,7 +295,10 @@
     "21": 1.0,
     "22": 1.0,
     "23": 1.0,
-    "24": 1.0
+    "24": 1.0,
+    "25": 1.0,
+    "26": 1.0,
+    "27": 1.0
   },
   "gods": [
     {
@@ -348,7 +354,7 @@
   ],
   "surprises": [],
   "tokens": {
-    "input": 11682,
-    "output": 998
+    "input": 0,
+    "output": 0
   }
 }
