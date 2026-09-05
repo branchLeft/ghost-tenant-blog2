@@ -8,3 +8,9 @@ config:
   blog2-infra:databaseHost: 10.20.1.20
   blog2-infra:mediaEndpoint: https://hel1.your-objectstorage.com
   blog2-infra:mediaRegion: hel1
+  blog2-infra:databasePassword:
+    secure: v1:16Ag9vcg1NtauLoP:7OcdFnJm5GjYcGYzweem5NCmzFdkNxsskm+yd/idAg4s/2DbQDCXTJ6lHA+pzvEWcJTYLwqnUyuTAQU=
+  blog2-infra:mediaAccessKeyId:
+    secure: v1:2bmIHaJs9DMmhzjp:SoCJO47JZ+MiLQqHUnIkkqqabC3EYsp/ZTNAbElaFlbGQSVe
+  blog2-infra:mediaSecretAccessKey:
+    secure: v1:C1f7hyeG31kdJL3Q:1MGELIFZ6p62q4Rjy3i2W+FWUZNiVZ3m7oY63bkI9eN+cfGKhCkOV3RnHECp5Z+r/QgG4uAGj24=
