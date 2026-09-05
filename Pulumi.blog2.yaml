@@ -1,0 +1,16 @@
+config:
+  blog2-infra:slug: blog2
+  blog2-infra:siteUrl: https://blog2.branchleft.co.uk
+  blog2-infra:uid: "30000"
+  blog2-infra:hostPort: "8100"
+  blog2-infra:appHostPrivateIp: 10.20.1.100
+  blog2-infra:imageRef: ghcr.io/branchleft/ghost-tenant@sha256:2b8a0badb64ddf5985c9e06c40c08cedfda7c30abcef8c4a0062286f0ca68d1e
+  blog2-infra:databaseHost: 10.20.1.20
+  blog2-infra:mediaEndpoint: https://hel1.your-objectstorage.com
+  blog2-infra:mediaRegion: hel1
+  blog2-infra:databasePassword:
+    secure: v1:16Ag9vcg1NtauLoP:7OcdFnJm5GjYcGYzweem5NCmzFdkNxsskm+yd/idAg4s/2DbQDCXTJ6lHA+pzvEWcJTYLwqnUyuTAQU=
+  blog2-infra:mediaAccessKeyId:
+    secure: v1:2bmIHaJs9DMmhzjp:SoCJO47JZ+MiLQqHUnIkkqqabC3EYsp/ZTNAbElaFlbGQSVe
+  blog2-infra:mediaSecretAccessKey:
+    secure: v1:C1f7hyeG31kdJL3Q:1MGELIFZ6p62q4Rjy3i2W+FWUZNiVZ3m7oY63bkI9eN+cfGKhCkOV3RnHECp5Z+r/QgG4uAGj24=
