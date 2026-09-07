@@ -338,20 +338,33 @@ jobs:
           printf '\nencryptionsalt: %s\n' "$PULUMI_ENCRYPTION_SALT" >> "$config"
 
       # Placed after the salt restore so the values encrypt under this stack's
-      # own secrets provider, and before the preview so a half-configured mail
-      # block fails at preview rather than rendering a secrets file Ghost cannot
-      # send with. Neither credential is ever committed: this repo is public.
+      # own secrets provider, and before the preview so a half-configured block
+      # fails here -- where the message names the secret -- rather than as a
+      # `Missing required configuration variable` later.
       #
-      # Both are required rather than optional. `config.ts` makes each block
-      # all-or-nothing -- `mailHost` set makes `mailPassword` a `requireSecret`,
-      # and Ghost treats a partial `bulkEmail.mailgun` object as configured and
-      # crashes on `new URL(undefined)` -- so a missing secret must stop the
-      # deploy here, where the message names the secret, rather than surface as
-      # a decryption or URL error later.
+      # Injected at deploy time rather than committed as `secure:` ciphertext
+      # like this stack's database and media credentials. That is a custody
+      # choice, not a consequence of the repo being public: ciphertext is safe
+      # to commit here (PUL-12 keeps the salt out), and the template documents
+      # the committed route. This route is used because no agent or contributor
+      # needs the passphrase to rotate a mail credential -- the cost is that
+      # `pulumi preview --diff` from a plain checkout cannot resolve these two
+      # values, which is why the debugging path in this file's own comments
+      # needs them supplied locally.
       #
-      # GitHub expands an unset secret to '' rather than failing, so the empty
-      # check below is the only thing standing between an unset secret and a
-      # tenant deployed unable to send.
+      # The requirement is conditional and so is the check: the script reads
+      # the `mailHost` and `bulkEmailBaseUrl` toggles out of the stack config
+      # rather than asserting they are set. An unconditional check would demand
+      # a credential nothing needs the moment mail is turned off, citing a
+      # config line no longer there.
+      - name: Require the mail credentials this stack's toggles make mandatory
+        env:
+          MAIL_SMTP_PASSWORD: ${{ secrets.MAIL_SMTP_PASSWORD }}
+          BULK_EMAIL_API_KEY: ${{ secrets.BULK_EMAIL_API_KEY }}
+        run: |
+          python3 scripts/assert-mail-secrets-present.py --self-test
+          python3 scripts/assert-mail-secrets-present.py --config Pulumi.blog2.yaml
+
       - name: Inject deploy-time mail secrets into stack config
         env:
           MAIL_SMTP_PASSWORD: ${{ secrets.MAIL_SMTP_PASSWORD }}
@@ -361,14 +374,6 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.HETZNER_S3_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.HETZNER_S3_SECRET_ACCESS_KEY }}
         run: |
-          if [ -z "$MAIL_SMTP_PASSWORD" ]; then
-            echo "::error::the MAIL_SMTP_PASSWORD environment secret is empty or unset on this repository's production environment. Pulumi.blog2.yaml sets mailHost, which makes mailPassword required, so this stack cannot be previewed without it."
-            exit 1
-          fi
-          if [ -z "$BULK_EMAIL_API_KEY" ]; then
-            echo "::error::the BULK_EMAIL_API_KEY environment secret is empty or unset on this repository's production environment. Pulumi.blog2.yaml sets bulkEmailBaseUrl, which makes bulkEmailApiKey required, so this stack cannot be previewed without it."
-            exit 1
-          fi
           pulumi config set --secret --stack blog2 blog2-infra:mailPassword "$MAIL_SMTP_PASSWORD"
           pulumi config set --secret --stack blog2 blog2-infra:bulkEmailApiKey "$BULK_EMAIL_API_KEY"
 

@@ -16,17 +16,25 @@ config:
   #
   # The account is tenant zero's, deliberately: this tenant is disposable and
   # retires at cutover, so it borrows an existing mailbox rather than earning a
-  # second sending identity on mx1. `mailFrom` therefore carries this site's
-  # display name over that account's address -- the address has to match the
-  # authenticated user or the transport rejects the envelope.
+  # second sending identity. `mailFrom` therefore carries this site's display
+  # name over that account's address -- the address has to match the
+  # authenticated user or the relay rejects the envelope.
+  #
+  # `mailFrom` covers staff and auth mail only. Member-facing mail sends from
+  # the members support address, a Ghost DATABASE setting that defaults to
+  # `noreply@<site domain>` and is not in this repo. Setting the keys below
+  # correctly and leaving that one at its default is the configuration that
+  # yields an opaque HTTP 400 on every magic link -- see RUNBOOK-bootstrap.md.
   blog2-infra:mailHost: mx1.branchleft.co.uk
   blog2-infra:mailPort: '587'
   blog2-infra:mailUser: blog@branchleft.co.uk
   blog2-infra:mailFrom: 'branchLeft blog2 <blog@branchleft.co.uk>'
-  # mailPassword is not committed. It is a live credential and this repo is
-  # public, so it is held as an environment secret on `production` and encrypted
-  # into this stack's config by the deploy job at runtime -- see
-  # .github/workflows/infra-ci.yml.
+  # mailPassword is not committed. Not because the repo is public -- the three
+  # `secure:` values at the foot of this file are ciphertext committed to that
+  # same public repo, which PUL-12 permits so long as the salt stays out. It is
+  # a custody choice: held as an environment secret on `production` and
+  # encrypted in by the deploy job, so rotating a mail credential never needs
+  # this stack's passphrase. See .github/workflows/infra-ci.yml.
 
   # Bulk email (newsletters) through the platform's Mailgun shim. All three
   # fields travel together or none do: Ghost treats the mere presence of a
