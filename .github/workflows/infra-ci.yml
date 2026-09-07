@@ -337,6 +337,41 @@ jobs:
           esac
           printf '\nencryptionsalt: %s\n' "$PULUMI_ENCRYPTION_SALT" >> "$config"
 
+      # Placed after the salt restore so the values encrypt under this stack's
+      # own secrets provider, and before the preview so a half-configured mail
+      # block fails at preview rather than rendering a secrets file Ghost cannot
+      # send with. Neither credential is ever committed: this repo is public.
+      #
+      # Both are required rather than optional. `config.ts` makes each block
+      # all-or-nothing -- `mailHost` set makes `mailPassword` a `requireSecret`,
+      # and Ghost treats a partial `bulkEmail.mailgun` object as configured and
+      # crashes on `new URL(undefined)` -- so a missing secret must stop the
+      # deploy here, where the message names the secret, rather than surface as
+      # a decryption or URL error later.
+      #
+      # GitHub expands an unset secret to '' rather than failing, so the empty
+      # check below is the only thing standing between an unset secret and a
+      # tenant deployed unable to send.
+      - name: Inject deploy-time mail secrets into stack config
+        env:
+          MAIL_SMTP_PASSWORD: ${{ secrets.MAIL_SMTP_PASSWORD }}
+          BULK_EMAIL_API_KEY: ${{ secrets.BULK_EMAIL_API_KEY }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          PULUMI_BACKEND_URL: ${{ vars.PULUMI_BACKEND_URL }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.HETZNER_S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.HETZNER_S3_SECRET_ACCESS_KEY }}
+        run: |
+          if [ -z "$MAIL_SMTP_PASSWORD" ]; then
+            echo "::error::the MAIL_SMTP_PASSWORD environment secret is empty or unset on this repository's production environment. Pulumi.blog2.yaml sets mailHost, which makes mailPassword required, so this stack cannot be previewed without it."
+            exit 1
+          fi
+          if [ -z "$BULK_EMAIL_API_KEY" ]; then
+            echo "::error::the BULK_EMAIL_API_KEY environment secret is empty or unset on this repository's production environment. Pulumi.blog2.yaml sets bulkEmailBaseUrl, which makes bulkEmailApiKey required, so this stack cannot be previewed without it."
+            exit 1
+          fi
+          pulumi config set --secret --stack blog2 blog2-infra:mailPassword "$MAIL_SMTP_PASSWORD"
+          pulumi config set --secret --stack blog2 blog2-infra:bulkEmailApiKey "$BULK_EMAIL_API_KEY"
+
       - name: Preview the plan
         env:
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
