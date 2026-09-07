@@ -111,7 +111,7 @@ BOM = "\ufeff"
 # never holds the salt, while `Pulumi.<stack>.yaml` does.
 STACK_CONFIG = re.compile(r"^Pulumi\.[^/]+\.yaml$")
 
-SKIP_DIRS = {".git", ".worktrees", "node_modules", "graphify-out", "dist", "bin", "vendor"}
+SKIP_DIRS = {".git", ".worktrees", "node_modules", "dist", "bin", "vendor"}
 
 EXIT_SALT_FOUND = 1
 # Not 2: argparse exits 2 on a usage error, and a caller that has to tell
