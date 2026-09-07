@@ -162,6 +162,75 @@ recorded property of the state backend, not something this repo can narrow.
 
 ---
 
+## Enabling mail on this tenant
+
+Four things have to be true before a member can sign in, and only the first is
+in this repo. Ghost members authenticate by magic link and nothing else, so a
+tenant whose mail is wrong is a tenant nobody can join — while still serving
+200 and reporting healthy.
+
+**1. The stack config.** `mailHost` is the toggle. Unset, the component emits no
+`mail` block, Ghost falls back to SMTP on its own loopback, and every magic link
+fails `ECONNREFUSED 127.0.0.1:587`. `bulkEmailBaseUrl` is the same toggle for
+newsletters. Each block is all-or-nothing: once its toggle is set the rest are
+`require`d, and Ghost treats a partial `bulkEmail.mailgun` object as configured
+and crashes on `new URL(undefined)`.
+
+**2. The two environment secrets**, `MAIL_SMTP_PASSWORD` and
+`BULK_EMAIL_API_KEY`, on `production`. The deploy job refuses to run without
+whichever ones this stack's toggles make mandatory —
+`scripts/assert-mail-secrets-present.py` reads the toggles rather than assuming
+them. A workflow run cannot write a secret, so this is an owner step and the
+first run after enabling mail is where an unset one surfaces.
+
+Prefer a **secondary credential of the relay account** — an app password minted
+for this tenant alone — over the account's own password or a copy of another
+tenant's. It authenticates as the same account, so the sender restriction is
+satisfied identically, and it is revocable without taking down every other
+consumer of that mailbox.
+
+**3. A shim tenant for this stack's `bulkEmailDomain`.** The bulk-email shim
+keys its authentication per domain and hashes the key, so an unregistered
+domain and a wrong key both return the same 401, and Ghost reports either as a
+transient send failure. Register it once on the mail host, and never pass
+`--rotate` to a domain that already exists — that replaces a live tenant's key
+silently.
+
+**4. The Ghost sender address, which is a database setting in no repo at all.**
+Member-facing mail does not send from `mailFrom`. It sends from the members
+support address, which defaults to `noreply` and resolves to
+`noreply@<this site's domain>` — an address the relay has not authenticated as.
+Where the relay enforces must-match-sender that yields `501 5.5.4`, nodemailer
+raises `EENVELOPE`, and Ghost returns an **opaque HTTP 400** whose real cause
+appears only in container stdout. Set the sender to the authorised address in
+Ghost Admin, which verifies it by emailing it first. `mailFrom` still matters —
+it covers staff and auth mail — but it is not the setting that fixes member
+sign-in, and the two are easy to confuse because only one of them lives in a
+file anyone reviews.
+
+### The delivery order, which is not optional
+
+CI ships only the image tag. The rendered `composeFile` and `secretsEnvFile` are
+operator-written, and the compose file references both credentials as
+`${VAR:?...}`. So a compose file placed before its env file **aborts the whole
+stack on the next start** — the site, not just mail. Place them in this order:
+
+1. The secrets env file, `/etc/branchleft/<slug>.env`.
+2. The compose file, `/opt/branchleft/<slug>/compose.yml`.
+3. Restart the Compose unit.
+
+Reversing 1 and 2 is the failure worth knowing about, because nothing warns and
+the tenant is fully down until the env file lands.
+
+### Confirming it
+
+Request a magic link, then read the tenant container's stdout. Success replaces
+the `Failed to send email` line; it is not visible from the HTTP response, which
+returns 200 or an opaque 400 either way. A green deploy proves the config
+reached the host, never that a message left it.
+
+---
+
 ## Rotating this stack's passphrase
 
 Rotating means **re-wrapping the stack**, not replacing the secret. Replacing

@@ -8,6 +8,45 @@ config:
   blog2-infra:databaseHost: 10.20.1.20
   blog2-infra:mediaEndpoint: https://hel1.your-objectstorage.com
   blog2-infra:mediaRegion: hel1
+
+  # Outbound mail. `mailHost` is the toggle: with it unset the component emits
+  # no mail block at all and Ghost falls back to SMTP on its own loopback, which
+  # is refused -- a tenant that serves 200 and reports healthy while no member
+  # can ever sign in, since magic link is Ghost's only member auth path.
+  #
+  # The account is tenant zero's, deliberately: this tenant is disposable and
+  # retires at cutover, so it borrows an existing mailbox rather than earning a
+  # second sending identity. `mailFrom` therefore carries this site's display
+  # name over that account's address -- the address has to match the
+  # authenticated user or the relay rejects the envelope.
+  #
+  # `mailFrom` covers staff and auth mail only. Member-facing mail sends from
+  # the members support address, a Ghost DATABASE setting that defaults to
+  # `noreply@<site domain>` and is not in this repo. Setting the keys below
+  # correctly and leaving that one at its default is the configuration that
+  # yields an opaque HTTP 400 on every magic link -- see RUNBOOK-bootstrap.md.
+  blog2-infra:mailHost: mx1.branchleft.co.uk
+  blog2-infra:mailPort: '587'
+  blog2-infra:mailUser: blog@branchleft.co.uk
+  blog2-infra:mailFrom: 'branchLeft blog2 <blog@branchleft.co.uk>'
+  # mailPassword is not committed. Not because the repo is public -- the three
+  # `secure:` values at the foot of this file are ciphertext committed to that
+  # same public repo, which PUL-12 permits so long as the salt stays out. It is
+  # a custody choice: held as an environment secret on `production` and
+  # encrypted in by the deploy job, so rotating a mail credential never needs
+  # this stack's passphrase. See .github/workflows/infra-ci.yml.
+
+  # Bulk email (newsletters) through the platform's Mailgun shim. All three
+  # fields travel together or none do: Ghost treats the mere presence of a
+  # partial `bulkEmail.mailgun` object as configured and crashes on
+  # `new URL(undefined)`.
+  #
+  # `bulkEmailDomain` is the shim-side tenant identifier, not a sending domain,
+  # so it stays this tenant's own even though the SMTP account is shared.
+  blog2-infra:bulkEmailBaseUrl: https://mx1.branchleft.co.uk:8443
+  blog2-infra:bulkEmailDomain: blog2.branchleft.co.uk
+  # bulkEmailApiKey is injected at deploy time too, for the same reason as
+  # mailPassword above.
   blog2-infra:databasePassword:
     secure: v1:16Ag9vcg1NtauLoP:7OcdFnJm5GjYcGYzweem5NCmzFdkNxsskm+yd/idAg4s/2DbQDCXTJ6lHA+pzvEWcJTYLwqnUyuTAQU=
   blog2-infra:mediaAccessKeyId:

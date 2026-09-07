@@ -337,6 +337,46 @@ jobs:
           esac
           printf '\nencryptionsalt: %s\n' "$PULUMI_ENCRYPTION_SALT" >> "$config"
 
+      # Placed after the salt restore so the values encrypt under this stack's
+      # own secrets provider, and before the preview so a half-configured block
+      # fails here -- where the message names the secret -- rather than as a
+      # `Missing required configuration variable` later.
+      #
+      # Injected at deploy time rather than committed as `secure:` ciphertext
+      # like this stack's database and media credentials. That is a custody
+      # choice, not a consequence of the repo being public: ciphertext is safe
+      # to commit here (PUL-12 keeps the salt out), and the template documents
+      # the committed route. This route is used because no agent or contributor
+      # needs the passphrase to rotate a mail credential -- the cost is that
+      # `pulumi preview --diff` from a plain checkout cannot resolve these two
+      # values, which is why the debugging path in this file's own comments
+      # needs them supplied locally.
+      #
+      # The requirement is conditional and so is the check: the script reads
+      # the `mailHost` and `bulkEmailBaseUrl` toggles out of the stack config
+      # rather than asserting they are set. An unconditional check would demand
+      # a credential nothing needs the moment mail is turned off, citing a
+      # config line no longer there.
+      - name: Require the mail credentials this stack's toggles make mandatory
+        env:
+          MAIL_SMTP_PASSWORD: ${{ secrets.MAIL_SMTP_PASSWORD }}
+          BULK_EMAIL_API_KEY: ${{ secrets.BULK_EMAIL_API_KEY }}
+        run: |
+          python3 scripts/assert-mail-secrets-present.py --self-test
+          python3 scripts/assert-mail-secrets-present.py --config Pulumi.blog2.yaml
+
+      - name: Inject deploy-time mail secrets into stack config
+        env:
+          MAIL_SMTP_PASSWORD: ${{ secrets.MAIL_SMTP_PASSWORD }}
+          BULK_EMAIL_API_KEY: ${{ secrets.BULK_EMAIL_API_KEY }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          PULUMI_BACKEND_URL: ${{ vars.PULUMI_BACKEND_URL }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.HETZNER_S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.HETZNER_S3_SECRET_ACCESS_KEY }}
+        run: |
+          pulumi config set --secret --stack blog2 blog2-infra:mailPassword "$MAIL_SMTP_PASSWORD"
+          pulumi config set --secret --stack blog2 blog2-infra:bulkEmailApiKey "$BULK_EMAIL_API_KEY"
+
       - name: Preview the plan
         env:
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
